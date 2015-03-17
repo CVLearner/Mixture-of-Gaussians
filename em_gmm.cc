@@ -95,7 +95,7 @@ void calculate_log_prob_diagonal(
             mat_log_probs.cols() == num_modes);
 
     const float c0(-0.5f*dim*log(2*M_PI));
-    RowVectorXf vec_c1_cov_prod(dim);
+    RowVectorXf vec_c1_cov_prod(num_modes);
     for (long c = 0; c < num_modes; c++) {
         vec_c1_cov_prod(c) = -0.5f*(mat_diag_covs.row(c).array().log().sum());
     }
