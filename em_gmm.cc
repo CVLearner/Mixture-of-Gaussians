@@ -264,16 +264,6 @@ void em_gmm(
             calculate_log_prob_diagonal(mat_data, vec_weights, mat_means, mat_diag_covs, mat_log_probs);
         }
 
-        //< check mat_log_probs
-        for (int n = 0; n < num_pts; n++) {
-            for (int m = 0; m < num_modes; m++) {
-                if (isnan(mat_log_probs(n,m))) {
-                    cout << n << " , " << m << endl;
-                    exit(-1);
-                }
-            }
-        }
-
         #pragma omp parallel for
         for (long n = 0; n < num_pts; n++) {
             vec_log_sum_probs(n) = mat_log_probs(n,0);
