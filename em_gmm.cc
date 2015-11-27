@@ -151,7 +151,7 @@ void em_gmm(
     }
 
     //< kmeans convergence
-    const int max_kmeans_iterations = 5;
+    const int max_kmeans_iterations = 20;
     bool is_converged = false;
     float eps(0.0f);
 
@@ -240,7 +240,7 @@ void em_gmm(
             mat_diag_covs.row(c).fill(spherical_val);
         }
     }
-    
+
     //< EM
     RowMatrixXf& mat_log_probs = mat_distance;
 
@@ -262,6 +262,16 @@ void em_gmm(
             calculate_log_prob_spherical(mat_data, vec_nrm2_pts, vec_weights, mat_means, mat_diag_covs, mat_log_probs);
         } else {
             calculate_log_prob_diagonal(mat_data, vec_weights, mat_means, mat_diag_covs, mat_log_probs);
+        }
+
+        //< check mat_log_probs
+        for (int n = 0; n < num_pts; n++) {
+            for (int m = 0; m < num_modes; m++) {
+                if (isnan(mat_log_probs(n,m))) {
+                    cout << n << " , " << m << endl;
+                    exit(-1);
+                }
+            }
         }
 
         #pragma omp parallel for
@@ -327,3 +337,39 @@ void em_gmm(
     } //< em LOOP END
     
 } //< function: fit_mixture_model
+
+void likelihood_gmm(
+        const float *data, 
+        const long num_pts, 
+        const long dim,
+        const int num_modes,
+        const float *means, 
+        const float *diag_covs,
+        const float *weights,
+        float *log_probs, //< num_pts x num_modes
+        bool is_spherical_gaussian) {
+
+    Map<const RowMatrixXf> mat_data(data, num_pts, dim);
+    Map<const RowMatrixXf> mat_means(means, num_modes, dim);
+    Map<const RowMatrixXf> mat_diag_covs(diag_covs, num_modes, dim);
+    Map<const RowVectorXf> vec_weights(weights, num_modes);
+
+    VectorXf vec_nrm2_pts(num_pts);
+    #pragma omp parallel for
+    for (long r = 0; r < num_pts; r++) {
+        vec_nrm2_pts(r) = mat_data.row(r).squaredNorm();
+    }
+
+    RowVectorXf vec_nrm2_centers(num_modes);
+
+    RowMatrixXf mat_log_probs(num_pts, num_modes);
+
+    //< calculate log probabilities
+    if (is_spherical_gaussian) {
+        calculate_log_prob_spherical(mat_data, vec_nrm2_pts, vec_weights, mat_means, mat_diag_covs, mat_log_probs);
+    } else {
+        calculate_log_prob_diagonal(mat_data, vec_weights, mat_means, mat_diag_covs, mat_log_probs);
+    }
+
+    std::copy(mat_log_probs.data(), mat_log_probs.data() + num_pts*num_modes, log_probs);
+}

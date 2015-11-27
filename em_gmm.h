@@ -29,3 +29,14 @@ void em_gmm(
         float *diag_covs,
         float *weights,
         bool should_fit_spherical_gaussian = true);
+
+void likelihood_gmm(
+        const float *data, 
+        const long num_pts, 
+        const long dim,
+        const int num_modes,
+        const float *means, 
+        const float *diag_covs,
+        const float *weights,
+        float *log_probs, //< num_pts x num_modes
+        bool is_spherical_gaussian = true);
